@@ -1,0 +1,649 @@
+<!doctype html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<title>RPH Mobile Suit Squadron</title>
+<style>
+:root{--bg:#07090f;--panel:#0f141d;--card:#151c28;--line:#273244;--ink:#e6edf7;--mute:#8592a8;--amber:#ffb300;--cyan:#00e5ff;
+  --b1:#2979ff;--b2:#ffb300;--b3:#00c853;--b4:#d500f9;--b5:#ff1744;--ok:#00e676;--warn:#ffc400;--tg:#2aabee;
+  --hud:"Orbitron",Impact,sans-serif;--mono:"Share Tech Mono",Consolas,monospace;
+  --caution:repeating-linear-gradient(-45deg,#ffb300 0 10px,#111 10px 20px)}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,Segoe UI,Roboto,sans-serif}
+#app{display:grid;grid-template-columns:1fr 420px;grid-template-rows:auto 1fr;height:100vh}
+header{grid-column:1/3;display:flex;align-items:center;gap:12px;padding:10px 16px 14px;background:var(--panel);flex-wrap:wrap;position:relative}
+header::after{content:"";position:absolute;left:0;right:0;bottom:0;height:5px;background:var(--caution)}
+header h1{font:900 17px var(--hud);margin:0 auto 0 0;letter-spacing:2px;color:var(--amber)}
+header h1 small{color:var(--mute);font:400 12px var(--mono);letter-spacing:1px}
+header label{font:12px var(--mono);color:var(--mute)}
+button{font:600 12px var(--hud);letter-spacing:1px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:7px 14px;border-radius:2px;cursor:pointer;clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px)}
+button:hover{border-color:var(--cyan);color:var(--cyan)}button:disabled{opacity:.4;cursor:default}
+button.primary{background:var(--amber);border-color:var(--amber);color:#111}
+button.primary:hover{color:#111;background:#ffc93d}
+select{font:12px var(--mono);background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:2px;padding:5px}
+#stage{position:relative;min-height:0;overflow:hidden}
+#stage canvas{display:block;width:100%;height:100%}
+#stage::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:1;background:repeating-linear-gradient(0deg,transparent 0 3px,rgba(0,229,255,.025) 3px 4px)}
+#pipeline{position:absolute;top:10px;left:10px;right:10px;display:flex;gap:6px;pointer-events:none;z-index:2}
+.pill{flex:1;padding:6px 8px;background:#0a0f18e0;border:1px solid var(--line);border-top:3px solid currentColor;font:600 11px var(--hud);letter-spacing:1px;text-align:center;transition:.3s}
+.pill b{display:block;font-size:13px;font-weight:900}
+.pill .st{display:block;font:10px var(--mono);color:var(--mute);margin-top:2px}
+.pill.active{box-shadow:0 0 14px currentColor;background:#141c2ae0}.pill.active .st{color:var(--amber)}
+.pill.done .st{color:var(--ok)}
+#mission{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%) scale(.8);z-index:3;pointer-events:none;opacity:0;transition:.6s;text-align:center;white-space:nowrap;
+  font:900 clamp(22px,4.5vw,56px) var(--hud);letter-spacing:5px;color:var(--amber);text-shadow:0 0 18px #ff6d00,0 0 2px #000;padding:14px 30px;background:#07090fc0;border-top:6px solid;border-bottom:6px solid;border-image:var(--caution) 6}
+#mission small{display:block;font:14px var(--mono);letter-spacing:2px;color:var(--cyan);text-shadow:none}
+#mission.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+/* phone */
+#phone{position:absolute;left:14px;bottom:14px;width:270px;height:430px;background:#0e1621;border:8px solid #222b3a;border-radius:28px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 40px #000a;z-index:2}
+#phone .tgbar{background:#17212b;padding:9px 12px;display:flex;align-items:center;gap:8px;font-size:13px;border-bottom:1px solid #0b0f15}
+#phone .av{width:30px;height:30px;border-radius:50%;background:var(--amber);color:#111;display:grid;place-items:center;font:900 11px var(--hud)}
+#phone .tgbar small{display:block;color:#6c7883;font-size:11px}
+#chat{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px;background:#0e1621}
+.msg{background:#182533;border-radius:12px 12px 12px 4px;padding:8px 10px;font-size:12.5px;white-space:pre-wrap;max-width:94%;animation:pop .3s}
+.msg.me{align-self:flex-end;background:#2b5278;border-radius:12px 12px 4px 12px}
+.msg time{display:block;text-align:right;color:#6c7883;font-size:10px}
+.kb{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:6px}
+.kb button{background:#1f3349;border:none;font:12px system-ui,sans-serif;letter-spacing:0;padding:7px 4px;border-radius:6px;clip-path:none;color:var(--ink)}
+.kb button.wide{grid-column:1/3}
+.kb button:hover{background:#2b5278;color:var(--ink)}
+@keyframes pop{from{transform:scale(.9);opacity:0}}
+/* side */
+aside{display:grid;grid-template-rows:auto 1fr 200px;min-height:0;border-left:2px solid var(--line);background:var(--panel)}
+#botHead{padding:12px 14px;border-bottom:1px solid var(--line)}
+#botHead h2{margin:0;font:900 15px var(--hud);letter-spacing:1.5px}#botHead p{margin:4px 0 0;color:var(--mute);font-size:12.5px}
+#view{overflow-y:auto;padding:12px 14px;min-height:0}
+#log{overflow-y:auto;padding:8px 14px;border-top:2px solid var(--amber);font:12.5px/1.5 var(--mono);background:#060a10;color:#b9f6ca}
+#log div{white-space:pre-wrap}#log .t{color:#4a5a70}
+.card{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--cyan);padding:10px 12px;margin-bottom:10px;clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,0 100%)}
+.card h3{margin:0 0 6px;font:700 12px var(--hud);letter-spacing:1px;color:var(--cyan)}
+.kv{display:grid;grid-template-columns:110px 1fr;gap:3px 8px;font-size:12.5px}.kv span:nth-child(odd){color:var(--mute);font:12px var(--mono)}
+.new{border-left:3px solid var(--b2);padding-left:8px;margin-top:6px;white-space:pre-wrap;font-size:12.5px}
+.new b{color:var(--b2);font:700 10px var(--hud);letter-spacing:1px;display:block}
+.chk{display:flex;gap:8px;font-size:12.5px;padding:3px 0}.chk i{font-style:normal;width:16px}
+.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;font-size:11px;text-align:center}
+.grid .h{color:var(--amber);font:700 10px var(--hud)}
+.cell{background:#0a1018;border:1px solid var(--line);padding:5px 2px;transition:.3s;font-family:var(--mono)}
+.cell.on{background:#0d3b22;border-color:var(--ok)}.cell.hol{background:#4a3b10;border-color:var(--warn)}
+.cr{background:#fff;color:#202124;border-radius:10px;padding:12px;font-size:12.5px}
+.cr .ttl{font-size:15px;color:#1e8e3e}.cr .st{float:right;font-size:12px;color:#5f6368}.cr .st.ok{color:#1e8e3e;font-weight:600}
+.cr .att{border:1px solid #dadce0;border-radius:8px;padding:8px;margin:8px 0;display:flex;gap:8px;align-items:center;animation:pop .3s}
+.cr .att i{width:26px;height:26px;background:#0f9d58;border-radius:4px;display:inline-block}
+.cr .btn{background:#1a73e8;color:#fff;border-radius:4px;padding:7px;text-align:center;margin-top:6px}
+.cr .cm{border-top:1px solid #e0e0e0;margin-top:8px;padding-top:6px;color:#3c4043}
+code{background:#0d1428;padding:1px 5px;border-radius:4px;font-size:12px}
+@media (max-width:900px){
+  #app{display:block;height:auto}
+  #stage{height:auto}#stage canvas{height:55vh}
+  #phone{position:relative;left:auto;bottom:auto;margin:12px auto;height:380px}
+  aside{display:block}#view{max-height:none}#log{height:200px}
+  .pill .st{display:none}.pill{font-size:9px;padding:5px 3px;letter-spacing:0}
+  #mission{top:28vh;padding:10px 14px;letter-spacing:2px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>RPH MOBILE SUIT SQUADRON <small>// OPERATION MINGGU 32 · data sebenar RPT</small></h1>
+    <label>Laju <select id="speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select></label>
+    <button id="play" class="primary">▶ LAUNCH</button>
+    <button id="reset">↺ RESET</button>
+  </header>
+  <div id="stage">
+    <div id="pipeline"></div>
+    <div id="mission">MISSION COMPLETE<small>RPH MINGGU 32 · TURNED IN</small></div>
+    <div id="phone">
+      <div class="tgbar"><div class="av">RX</div><div>RPH Squadron Bot<small>bot</small></div></div>
+      <div id="chat"></div>
+    </div>
+  </div>
+  <aside>
+    <div id="botHead"><h2 style="color:var(--amber)">STANDBY · Sedia</h2><p>Tekan ▶ LAUNCH untuk melihat 5 unit mobile suit bekerja dari RPT hingga hantar di Google Classroom.</p></div>
+    <div id="view"></div>
+    <div id="log"></div>
+  </aside>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="w32.js"></script>
+<script>
+"use strict";
+const DATA = window.W32;
+const BOTS = [
+  {n:1,name:"Scout",      role:"RPT Reader",      job:"Baca RPT, tentukan minggu, ambil maklumat minggu itu.", col:0x2979ff, css:"var(--b1)"},
+  {n:2,name:"Strategist", role:"RPH Planner",     job:"Rancang RPH ikut format GS + pembelajaran terbeza + cadangan refleksi.", col:0xffb300, css:"var(--b2)"},
+  {n:3,name:"Builder",    role:"Sheet Filler",    job:"Salin GS di Drive, kosongkan, isi semua RPH minggu ini.", col:0x00c853, css:"var(--b3)"},
+  {n:4,name:"Inspector",  role:"Reviewer",        job:"Semak semua RPH, baiki kandungan, minta kelulusan di Telegram.", col:0xd500f9, css:"var(--b4)"},
+  {n:5,name:"Striker",    role:"Classroom Sender",job:"Lampirkan GS di tugasan Penilai, Hand in, komen, lapor.", col:0xff1744, css:"var(--b5)"},
+];
+const DAYS = ["ISNIN","SELASA","RABU","KHAMIS","JUMAAT"];
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+
+/* ---------------- three.js scene: mobile-suit hangar ---------------- */
+const stage = $("#stage");
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+stage.prepend(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x07090f);
+scene.fog = new THREE.Fog(0x07090f, 28, 60);
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 200);
+camera.position.set(-6, 9, 17);
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; controls.maxPolarAngle = Math.PI/2.1; controls.minDistance = 6; controls.maxDistance = 40;
+scene.add(new THREE.HemisphereLight(0xb0c4de, 0x10141c, 0.55));
+const sun = new THREE.DirectionalLight(0xffffff, 0.75);
+sun.position.set(8, 18, 10); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, {left:-20, right:20, top:12, bottom:-12});
+scene.add(sun);
+// spotlight that follows the unit on duty
+const spot = new THREE.SpotLight(0xffe0a0, 1.6, 30, .45, .5);
+spot.position.set(-10, 14, 6); scene.add(spot, spot.target);
+
+function canvasTex(w, h, draw) {
+  const c = document.createElement("canvas"); c.width = w; c.height = h; draw(c.getContext("2d"), w, h);
+  return new THREE.CanvasTexture(c);
+}
+const caution = canvasTex(64, 16, (g, w, h) => {
+  g.fillStyle = "#111"; g.fillRect(0, 0, w, h); g.fillStyle = "#ffb300";
+  for (let x = -h; x < w; x += 16) { g.beginPath(); g.moveTo(x, h); g.lineTo(x + 8, h); g.lineTo(x + 8 + h, 0); g.lineTo(x + h, 0); g.fill(); }
+});
+caution.wrapS = THREE.RepeatWrapping;
+
+// deck plates
+const deckTex = canvasTex(128, 128, (g, w, h) => {
+  g.fillStyle = "#1a1f29"; g.fillRect(0, 0, w, h);
+  g.strokeStyle = "#0c0f15"; g.lineWidth = 4; g.strokeRect(2, 2, w - 4, h - 4);
+  g.fillStyle = "#2a313d"; [[10,10],[w-14,10],[10,h-14],[w-14,h-14]].forEach(([x,y]) => g.fillRect(x, y, 4, 4));
+});
+deckTex.wrapS = deckTex.wrapT = THREE.RepeatWrapping; deckTex.repeat.set(20, 10);
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(80, 40), new THREE.MeshStandardMaterial({map:deckTex, roughness:.8, metalness:.4}));
+floor.rotation.x = -Math.PI/2; floor.receiveShadow = true; scene.add(floor);
+
+// hangar back wall with stencil
+const wallTex = canvasTex(1024, 256, (g, w, h) => {
+  g.fillStyle = "#121722"; g.fillRect(0, 0, w, h);
+  g.strokeStyle = "#1d2433"; g.lineWidth = 3;
+  for (let x = 0; x < w; x += 64) g.strokeRect(x, 0, 64, h / 2), g.strokeRect(x + 32, h / 2, 64, h / 2);
+  g.fillStyle = "rgba(255,179,0,.3)"; g.font = "bold 30px Orbitron, Impact, sans-serif"; g.textAlign = "center";
+  g.fillText("RPH HANGAR 01 · SK BANDAR TAWAU", w / 2, 220);
+});
+const wall = new THREE.Mesh(new THREE.PlaneGeometry(56, 14), new THREE.MeshStandardMaterial({map:wallTex, roughness:.9}));
+wall.position.set(0, 7, -7); scene.add(wall);
+for (let x = -24; x <= 24; x += 8) {  // wall ribs with warning lamps
+  const rib = new THREE.Mesh(new THREE.BoxGeometry(.5, 14, .5), new THREE.MeshStandardMaterial({color:0x2a313d, metalness:.6, roughness:.4}));
+  rib.position.set(x, 7, -6.7); scene.add(rib);
+  const lamp = new THREE.Mesh(new THREE.SphereGeometry(.18, 12, 12), new THREE.MeshBasicMaterial({color:0xff6d00}));
+  lamp.position.set(x, 11, -6.4); scene.add(lamp);
+}
+
+// catapult rail: scrolling guide lights in the middle, caution strips on both edges
+const stripeCv = document.createElement("canvas"); stripeCv.width = 64; stripeCv.height = 8;
+const sx = stripeCv.getContext("2d"); sx.fillStyle = "#151a22"; sx.fillRect(0,0,64,8); sx.fillStyle = "#00e5ff"; sx.fillRect(0,3,10,2);
+const stripeTex = new THREE.CanvasTexture(stripeCv); stripeTex.wrapS = THREE.RepeatWrapping; stripeTex.repeat.set(14, 1);
+const railMat = new THREE.MeshStandardMaterial({color:0x232a35, metalness:.7, roughness:.35});
+const belt = new THREE.Mesh(new THREE.BoxGeometry(28, .3, 1.6), [railMat, railMat,
+  new THREE.MeshStandardMaterial({map:stripeTex, emissive:0x00222a, emissiveMap:stripeTex}), railMat, railMat, railMat]);
+belt.position.set(0, .55, 2.6); belt.receiveShadow = true; scene.add(belt);
+[-1, 1].forEach(s => {
+  const c = caution.clone(); c.needsUpdate = true; c.repeat.set(40, 1);
+  const strip = new THREE.Mesh(new THREE.BoxGeometry(28, .32, .25), new THREE.MeshStandardMaterial({map:c}));
+  strip.position.set(0, .56, 2.6 + s*.92); scene.add(strip);
+});
+for (let x = -13; x <= 13; x += 2.6) {
+  const leg = new THREE.Mesh(new THREE.BoxGeometry(.2, .5, 1.4), railMat);
+  leg.position.set(x, .25, 2.6); scene.add(leg);
+}
+
+let labelQueue = [];
+function label(text, sub, color) {
+  const tex = new THREE.CanvasTexture(document.createElement("canvas"));
+  const draw = () => {
+    const c = tex.image; c.width = 512; c.height = 170; const g = c.getContext("2d");
+    g.clearRect(0, 0, 512, 170);
+    g.fillStyle = "rgba(8,12,20,.85)"; g.fillRect(10, 10, 492, 150);
+    g.strokeStyle = "#ffb300"; g.lineWidth = 6;  // HUD corner brackets
+    [[10,10,1,1],[502,10,-1,1],[10,160,1,-1],[502,160,-1,-1]].forEach(([x,y,a,b]) => {
+      g.beginPath(); g.moveTo(x + 40*a, y); g.lineTo(x, y); g.lineTo(x, y + 40*b); g.stroke(); });
+    g.fillStyle = color; g.fillRect(10, 10, 8, 150);
+    g.textAlign = "center"; g.fillStyle = color; g.font = "900 60px Orbitron, Impact, sans-serif"; g.fillText(text, 262, 80);
+    g.fillStyle = "#e6edf7"; let fs = 32; do g.font = `600 ${fs}px Orbitron, Impact, sans-serif`; while (g.measureText(sub.toUpperCase()).width > 440 && --fs > 14);
+    g.fillText(sub.toUpperCase(), 262, 130);
+    tex.needsUpdate = true;
+  };
+  draw(); labelQueue.push(draw);
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({map:tex, depthTest:false}));
+  s.scale.set(3.4, 1.13, 1); return s;
+}
+// redraw labels once the Orbitron webfont is in (canvas text cannot wait for it on its own)
+if (document.fonts) document.fonts.load("900 60px Orbitron").then(() => labelQueue.forEach(f => f()), () => {});
+
+const WHITE = 0xeceff1, RED = 0xd32f2f, YEL = 0xffc400, FRAME = 0x37404f;
+function box(w, h, d, mat, x, y, z, parent) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); m.castShadow = true; parent.add(m); return m;
+}
+function mobileSuit(accent) {
+  const white = new THREE.MeshStandardMaterial({color:WHITE, roughness:.35, metalness:.25});
+  const chestM = new THREE.MeshStandardMaterial({color:accent, roughness:.35, metalness:.35});
+  const red = new THREE.MeshStandardMaterial({color:RED, roughness:.4, metalness:.3});
+  const yel = new THREE.MeshStandardMaterial({color:YEL, roughness:.3, metalness:.5, emissive:0x221a00});
+  const frame = new THREE.MeshStandardMaterial({color:FRAME, roughness:.5, metalness:.7});
+  const eyeMat = new THREE.MeshBasicMaterial({color:0x1b5e20});
+  const r = new THREE.Group();
+  // legs + feet
+  [-.38, .38].forEach(x => {
+    box(.5, .25, .9, red, x, .12, .1, r);
+    box(.48, .8, .55, white, x, .65, 0, r);
+    box(.5, .25, .6, frame, x, 1.12, 0, r);         // knee joint
+    box(.52, .6, .58, white, x, 1.5, 0, r);
+  });
+  box(1.1, .35, .7, red, 0, 1.95, 0, r);            // waist / skirt
+  box(.3, .3, .1, yel, 0, 1.95, .38, r);            // V buckle
+  box(1.4, 1.0, .85, chestM, 0, 2.6, 0, r);         // torso
+  [-.35, .35].forEach(x => { for (let k = 0; k < 3; k++) box(.32, .06, .05, yel, x, 2.75 - k*.1, .44, r); }); // chest vents
+  box(1.1, .9, .5, frame, 0, 2.7, -.6, r);          // backpack
+  [-.3, .3].forEach(x => box(.1, .5, .1, white, x, 3.3, -.7, r)); // saber hilts
+  box(.3, .2, .3, frame, 0, 3.2, 0, r);             // neck
+  // head with V-fin, red chin and twin green eyes
+  box(.55, .5, .55, white, 0, 3.5, 0, r);
+  box(.18, .12, .1, red, 0, 3.28, .28, r);
+  const visor = box(.42, .12, .05, new THREE.MeshBasicMaterial({color:0x101820}), 0, 3.52, .29, r);
+  [-.1, .1].forEach(x => { const e = new THREE.Mesh(new THREE.BoxGeometry(.12, .06, .02), eyeMat); e.position.set(x, 3.53, .32); r.add(e); });
+  box(.12, .1, .06, red, 0, 3.73, .29, r);         // forehead crest
+  [-1, 1].forEach(s => { const f = box(.5, .07, .05, yel, s*.24, 3.92, .3, r); f.rotation.z = s * .65; });
+  // shoulders + arms on pivots
+  const arms = [-1, 1].map(s => {
+    const piv = new THREE.Group(); piv.position.set(s*.95, 2.85, 0); r.add(piv);
+    box(.6, .55, .75, white, s*.05, .1, 0, piv);    // shoulder armour
+    box(.62, .1, .77, red, s*.05, .4, 0, piv);
+    box(.32, .55, .32, frame, 0, -.4, 0, piv);
+    box(.38, .6, .4, white, 0, -.95, 0, piv);
+    box(.3, .25, .3, frame, 0, -1.35, 0, piv);      // fist
+    return piv;
+  });
+  // beam saber in the right hand, shown while the unit is on duty
+  const saber = new THREE.Mesh(new THREE.CylinderGeometry(.06, .06, 1.8, 10),
+    new THREE.MeshBasicMaterial({color:0xff4fd8, transparent:true, opacity:.9}));
+  saber.position.set(0, -2.3, 0); saber.visible = false; arms[1].add(saber);
+  const shield = box(.12, 1.2, .8, red, -.28, -.9, 0, arms[0]);
+  box(.13, .3, .3, yel, -.29, -.7, 0, arms[0]);
+  return {r, eyeMat, arms, saber, shield};
+}
+
+const stations = BOTS.map((b, i) => {
+  const x = -10 + i*5, g = new THREE.Group(); g.position.set(x, 0, 0);
+  const frame = new THREE.MeshStandardMaterial({color:FRAME, roughness:.5, metalness:.7});
+  const pad = new THREE.Mesh(new THREE.CylinderGeometry(1.7, 1.9, .22, 6), frame); pad.position.y = .11; pad.receiveShadow = true; g.add(pad);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(1.75, .07, 6, 6), new THREE.MeshBasicMaterial({color:b.col, transparent:true, opacity:.15}));
+  ring.rotation.x = Math.PI/2; ring.position.y = .24; g.add(ring);
+  // maintenance gantry behind the suit
+  [-1.6, 1.6].forEach(gx => box(.25, 5.2, .25, frame, gx, 2.6, -1.3, g));
+  box(3.45, .25, .25, frame, 0, 5.2, -1.3, g);
+  box(3.45, .12, .8, frame, 0, 3.0, -1.0, g);      // catwalk
+  const bulb = new THREE.Mesh(new THREE.SphereGeometry(.14, 12, 12), new THREE.MeshBasicMaterial({color:0x3a4250}));
+  bulb.position.set(1.6, 5.45, -1.3); g.add(bulb);
+  const suit = mobileSuit(b.col); suit.r.position.y = .22; suit.r.scale.setScalar(.95); g.add(suit.r);
+  const lb = label("RX-0" + b.n, b.name, "#" + b.col.toString(16).padStart(6, "0")); lb.position.y = 6.1; g.add(lb);
+  scene.add(g);
+  return {g, robot:suit.r, ring, eyeMat:suit.eyeMat, bulb, arms:suit.arms, saber:suit.saber, x, active:false, done:false, col:b.col};
+});
+
+// props
+function paperStack(x, z, n, color) {
+  const g = new THREE.Group();
+  for (let i = 0; i < n; i++) {
+    const p = new THREE.Mesh(new THREE.BoxGeometry(.7, .06, .95), new THREE.MeshStandardMaterial({color: i%2 ? 0xf5f5f5 : color}));
+    p.position.y = i*.07; p.rotation.y = (Math.random()-.5)*.3; g.add(p);
+  }
+  g.position.set(x, .2, z); scene.add(g); return g;
+}
+paperStack(-12, -.4, 6, 0x2b579a); paperStack(-8, -.4, 4, 0x2b579a); // RPT .docx
+
+// tactical display behind RX-03 — 5 days × 4 rows of tiles
+const board = new THREE.Group(); board.position.set(0, 0, -3.2); scene.add(board);
+const frameB = new THREE.Mesh(new THREE.BoxGeometry(5.4, 3.6, .15), new THREE.MeshStandardMaterial({color:0x10202a, emissive:0x001a22}));
+frameB.position.y = 4.3; board.add(frameB);
+const edge = new THREE.Mesh(new THREE.BoxGeometry(5.6, 3.8, .1), new THREE.MeshBasicMaterial({color:0x00e5ff}));
+edge.position.set(0, 4.3, -.05); board.add(edge);
+const tiles = [];
+for (let r = 0; r < 4; r++) for (let c = 0; c < 5; c++) {
+  const t = new THREE.Mesh(new THREE.PlaneGeometry(.88, .68), new THREE.MeshStandardMaterial({color:0x26323d, emissive:0x000000}));
+  t.position.set(-2 + c*1, 5.55 - r*.8, .09); board.add(t); tiles.push(t);
+}
+const TILE_OFF = 0x26323d;
+// RX-04 scan ring
+const lens = new THREE.Mesh(new THREE.TorusGeometry(.6, .06, 8, 40), new THREE.MeshBasicMaterial({color:0x00e5ff}));
+lens.position.set(5, 3.6, 1.4); lens.visible = false; scene.add(lens);
+// launch gate at the end of the catapult = Google Classroom
+const portal = new THREE.Group(); portal.position.set(14.2, 0, 2.6); scene.add(portal);
+const gateM = new THREE.MeshStandardMaterial({color:FRAME, metalness:.7, roughness:.4});
+box(.5, 4.2, .5, gateM, 0, 2.1, -1.6, portal); box(.5, 4.2, .5, gateM, 0, 2.1, 1.6, portal); box(.5, .5, 3.7, gateM, 0, 4.2, 0, portal);
+const gateLights = [0, 1, 2, 3].map(k => {
+  const l = new THREE.Mesh(new THREE.SphereGeometry(.13, 10, 10), new THREE.MeshBasicMaterial({color:0x550000}));
+  l.position.set(-.3, 3.4 - k*.7, -1.6); portal.add(l); return l;
+});
+const pin = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 3.8), new THREE.MeshBasicMaterial({color:0x1e8e3e, transparent:true, opacity:.25, side:THREE.DoubleSide}));
+pin.position.y = 2.1; pin.rotation.y = Math.PI/2; portal.add(pin);
+const pl = label("LAUNCH", "Google Classroom", "#1e8e3e"); pl.position.y = 5.3; portal.add(pl);
+let gateGreen = false;
+
+// the travelling packet rides a catapult sled
+const packet = new THREE.Group(); scene.add(packet);
+box(1.1, .12, 1.3, new THREE.MeshStandardMaterial({color:0x37404f, metalness:.8, roughness:.3}), 0, -.05, 0, packet);
+for (let i = 0; i < 3; i++) box(.8, .07, 1, new THREE.MeshStandardMaterial({color:0xf5f5f5}), 0, .05 + i*.08, 0, packet);
+const tag = new THREE.Mesh(new THREE.BoxGeometry(.82, .02, .3), new THREE.MeshStandardMaterial({color:0x4fc3f7, emissive:0x113344}));
+tag.position.set(0, .3, -.3); packet.add(tag);
+packet.position.set(-13, .8, 2.6);
+
+// comm drone = telegram message
+const plane = new THREE.Mesh(new THREE.ConeGeometry(.3, .9, 3), new THREE.MeshStandardMaterial({color:0x2aabee, emissive:0x0a3a55}));
+plane.rotation.z = -Math.PI/2; plane.visible = false; scene.add(plane);
+
+// sparks
+const sparks = [];
+function burst(x, y, z, color) {
+  for (let i = 0; i < 30; i++) {
+    const m = new THREE.Mesh(new THREE.SphereGeometry(.06, 6, 6), new THREE.MeshBasicMaterial({color}));
+    m.position.set(x, y, z);
+    m.userData.v = new THREE.Vector3((Math.random()-.5)*.28, Math.random()*.28+.05, (Math.random()-.5)*.28);
+    m.userData.life = 1; scene.add(m); sparks.push(m);
+  }
+}
+
+const camGoal = {x:-3, look:new THREE.Vector3(-3, 2.2, 0)};
+let packetGoal = null, planeAnim = null, clock = new THREE.Clock();
+function resize() {
+  const w = renderer.domElement.clientWidth, h = renderer.domElement.clientHeight;
+  renderer.setSize(w, h, false); camera.aspect = w/h; camera.updateProjectionMatrix();
+}
+addEventListener("resize", resize);
+let userOrbit = false; controls.addEventListener("start", () => userOrbit = true);
+function tick() {
+  const dt = Math.min(clock.getDelta(), .05), t = clock.elapsedTime;
+  stripeTex.offset.x -= dt * (running ? .9*speed() : .08);
+  let activeX = null;
+  stations.forEach((s, i) => {
+    const on = s.active; if (on) activeX = s.x;
+    s.ring.material.opacity += ((on ? .95 : s.done ? .4 : .12) - s.ring.material.opacity) * .1;
+    s.ring.rotation.z += on ? dt*1.5 : 0;
+    s.eyeMat.color.setHex(on ? (Math.sin(t*12) > -.6 ? 0x76ff03 : 0x1b5e20) : s.done ? 0x64dd17 : 0x1b3a20);
+    s.bulb.material.color.setHex(on ? (Math.sin(t*10) > 0 ? 0xff6d00 : 0x331100) : s.done ? 0x00e676 : 0x3a4250);
+    s.robot.position.y = .22 + (on ? Math.abs(Math.sin(t*3))*.08 : 0);
+    s.robot.rotation.y = on ? Math.sin(t*1.5)*.3 : 0;
+    // on duty: right arm raised with beam saber, left arm guards with the shield
+    const [L, R] = s.arms;
+    R.rotation.x += ((on ? -2.4 + Math.sin(t*6)*.25 : 0) - R.rotation.x) * .12;
+    L.rotation.x += ((on ? -.9 : 0) - L.rotation.x) * .12;
+    s.saber.visible = on; if (on) s.saber.material.opacity = .7 + Math.sin(t*30)*.25;
+  });
+  if (activeX !== null) spot.target.position.set(activeX, 0, 0), spot.position.x += (activeX - spot.position.x) * .08;
+  spot.intensity += ((activeX !== null ? 1.6 : 0) - spot.intensity) * .08;
+  if (packetGoal) {
+    packet.position.x += (packetGoal - packet.position.x) * Math.min(1, dt*2.2*speed());
+    packet.position.y = .8 + Math.abs(Math.sin(t*8))*.03;
+  }
+  if (lens.visible) { lens.position.x = 5 + Math.sin(t*2)*1.2; lens.position.y = 3.2 + Math.cos(t*3)*.6; lens.rotation.y += dt*3; }
+  if (planeAnim) {
+    planeAnim.k = Math.min(1, planeAnim.k + dt*.6*speed());
+    const k = planeAnim.k;
+    plane.position.set(5 - k*18, 3 + Math.sin(k*Math.PI)*5, 1 + k*6);
+    if (k >= 1) { plane.visible = false; planeAnim = null; }
+  }
+  gateLights.forEach((l, k) => l.material.color.setHex(gateGreen ? 0x00e676 : (Math.floor(t*2) % 4 === k ? 0xff1744 : 0x550000)));
+  pin.material.color.setHex(gateGreen ? 0x00e676 : 0x1e8e3e);
+  pin.material.opacity = (gateGreen ? .4 : .2) + Math.sin(t*3)*.08;
+  for (let i = sparks.length-1; i >= 0; i--) {
+    const m = sparks[i]; m.position.add(m.userData.v); m.userData.v.y -= .01; m.userData.life -= dt*1.2;
+    m.scale.setScalar(Math.max(m.userData.life, .01));
+    if (m.userData.life <= 0) { scene.remove(m); sparks.splice(i, 1); }
+  }
+  if (!userOrbit) {
+    controls.target.lerp(camGoal.look, .04);
+    camera.position.lerp(new THREE.Vector3(camGoal.x - 3, 8.5, 15), .03);
+  }
+  controls.update(); renderer.render(scene, camera);
+  requestAnimationFrame(tick);
+}
+
+/* ---------------- simulation runner ---------------- */
+let running = false, runId = 0;
+const speed = () => +$("#speed").value;
+const sleep = ms => new Promise(r => setTimeout(r, ms / speed()));
+function guard(id) { if (id !== runId) throw "reset"; }
+function log(msg, color) {
+  const d = document.createElement("div");
+  const now = new Date().toLocaleTimeString("ms-MY", {hour12:false});
+  d.innerHTML = `<span class="t">${now}</span> ${color ? `<span style="color:${color}">${esc(msg)}</span>` : esc(msg)}`;
+  $("#log").append(d); $("#log").scrollTop = 1e9;
+}
+function view(html) { $("#view").innerHTML = html; $("#view").scrollTop = 0; }
+function tg(text, buttons, me) {
+  const m = document.createElement("div"); m.className = "msg" + (me ? " me" : "");
+  m.innerHTML = esc(text) + `<time>${new Date().toLocaleTimeString("ms-MY",{hour:"2-digit",minute:"2-digit"})}</time>`;
+  if (buttons) {
+    const kb = document.createElement("div"); kb.className = "kb";
+    buttons.forEach(b => { const x = document.createElement("button"); x.textContent = b.t; if (b.wide) x.className = "wide"; x.onclick = () => b.f(kb); kb.append(x); });
+    m.append(kb);
+  }
+  $("#chat").append(m); $("#chat").scrollTop = 1e9;
+}
+function pills() {
+  $("#pipeline").innerHTML = BOTS.map((b, i) =>
+    `<div class="pill ${stations[i].active ? "active" : ""} ${stations[i].done ? "done" : ""}" style="color:${b.css}"><b>RX-0${b.n}</b><span style="color:var(--ink)">${b.role}</span><span class="st">${stations[i].active ? "▶ SORTIE" : stations[i].done ? "■ MISSION CLEAR" : "□ STANDBY"}</span></div>`).join("");
+}
+async function enter(i) {
+  stations.forEach(s => s.active = false); stations[i].active = true; pills();
+  const b = BOTS[i];
+  $("#botHead").innerHTML = `<h2 style="color:${b.css}">RX-0${b.n} ${b.name.toUpperCase()} · ${b.role}</h2><p>${b.job}</p>`;
+  camGoal.x = stations[i].x; camGoal.look.set(stations[i].x, 2.4, 0);
+  packetGoal = stations[i].x; userOrbit = false;
+  tag.material.color.setHex(b.col);
+  log(`▶ RX-0${b.n} ${b.name}, ${b.role} — launching!`, b.css);
+  await sleep(900);
+}
+function leave(i) { stations[i].active = false; stations[i].done = true; pills(); burst(stations[i].x, 3.5, 0, BOTS[i].col); log(`■ RX-0${i+1}: mission clear. Returning to hangar.`, "var(--ok)"); }
+
+const W = DATA.week, blocks = DATA.blocks, ORIG = JSON.stringify(blocks);
+const isS = b => b.type === "sains";
+const F = b => b.fields;
+const who = b => isS(b) ? `${F(b).hari} · ${F(b).kelas.replace(/\s+/g," ")} · ${F(b).masa_mula}-${F(b).masa_tamat}` : `${b.sheet} · ${F(b).class.replace(/\s+/g," ")} · ${F(b).time}`;
+const lastSP = b => (F(b).standard_pembelajaran || "").split("\n").pop().replace(/^[\d.]+\s*/, "").replace(/\.$/, "");
+const lastLS = b => (F(b).main_learning_standard || "").split("\n")[0].replace(/^[\d.]+\s*/, "").replace(/\.$/, "");
+
+// Bot 2's additions (what claude -p would write; templated here for the simulation)
+function terbeza(b) {
+  if (b.holiday) return "";
+  if (isS(b)) { const sp = lastSP(b).toLowerCase();
+    return `Pembelajaran terbeza:\n• Asas: murid ${sp} dengan bantuan gambar dan bimbingan guru.\n• Sederhana: murid ${sp} secara berkumpulan dan menulis dua contoh.\n• Cemerlang: murid ${sp} dan menerangkan contoh baharu secara lisan.`; }
+  const ls = lastLS(b).toLowerCase();
+  return `Differentiated learning:\n• Support: pupils ${ls} using word cards and teacher guidance.\n• Core: pupils ${ls} in pairs.\n• Extension: pupils ${ls} independently and add two sentences of their own.`;
+}
+function refleksiDraft(b) {
+  if (b.holiday) return isS(b) ? F(b).refleksi : F(b).reflection;
+  return isS(b) ? `Objektif pembelajaran tercapai. Murid dapat ${lastSP(b).toLowerCase()}. Murid yang belum menguasai akan diberi bimbingan dan latihan pengukuhan pada sesi berikutnya.`
+                : `The lesson objective was achieved. Pupils were able to ${lastLS(b).toLowerCase()}. Pupils who need more support will be guided in the next lesson.`;
+}
+
+function blockCard(b, extra) {
+  const f = F(b);
+  const rows = isS(b)
+    ? [["Kelas", f.kelas], ["Tarikh", f.tarikh], ["Tema", f.tema], ["Topik", f.topik], ["SK", f.standard_kandungan], ["SP", f.standard_pembelajaran], ["Objektif", f.objektif], ["Aktiviti", f.aktiviti]]
+    : [["Class", f.class], ["Date", f.date], ["Topic", f.topic], ["Main skill", `${f.main_skill}: ${f.main_learning_standard}`], ["Comp. skill", `${f.comp_skill}: ${f.comp_learning_standard}`], ["Objective", f.learning_objective], ["Activities", f.activities]];
+  return `<div class="card"><h3>${esc(who(b))} ${b.holiday ? "🏖️ CUTI" : ""}</h3><div class="kv">${rows.map(([k, v]) => `<span>${k}</span><span style="white-space:pre-wrap">${esc(v)}</span>`).join("")}</div>${extra || ""}</div>`;
+}
+
+async function bot1(id) {
+  await enter(0);
+  view(`<div class="card"><h3>📂 Sumber</h3><div class="kv"><span>RPT Sains</span><span>rpt_sains_t2.docx</span><span>RPT BI</span><span>rpt_bi_t3.docx</span></div></div>`);
+  for (const m of ["Buka rpt_sains_t2.docx (python-docx)…", "Buka rpt_bi_t3.docx…", "Hari ini Jumaat 11.09.2026 → minggu depan dikesan", `MINGGU ${W.week}: ${W.start} → ${W.end}`, `Isi kandungan diambil dari RPT minggu ${W.rpt_week} (offset −1, ikut M32)`, "Cuti dikesan: RABU 16.09.2026 — Cuti Hari Malaysia", "Sains: tema BUMI DAN ANGKASA · SK 9.2 Udara", "BI: Module 9 On Holiday · lessons 132–136"]) {
+    guard(id); log(m); await sleep(550);
+  }
+  const s = blocks.find(isS), bi = blocks.find(b => !isS(b));
+  view(`<div class="card"><h3>📦 week_packet.json → Bot 2</h3><div class="kv">
+    <span>Minggu</span><span>${W.week} (${W.start} – ${W.end})</span><span>RPT week</span><span>${W.rpt_week}</span>
+    <span>Cuti</span><span>RABU 16.09 · Cuti Hari Malaysia</span><span>Slot jadual</span><span>${blocks.length} (Sains ${blocks.filter(isS).length}, BI ${blocks.filter(b => !isS(b)).length})</span></div></div>
+    <div class="card"><h3>Sains · ${esc(F(s).tema)}</h3><div class="kv"><span>SK</span><span style="white-space:pre-wrap">${esc(F(s).standard_kandungan)}</span><span>SP</span><span style="white-space:pre-wrap">${esc(F(s).standard_pembelajaran)}</span></div></div>
+    <div class="card"><h3>BI · ${esc(F(bi).topic)}</h3><div class="kv"><span>Theme</span><span>${esc(F(bi).theme)}</span><span>Lessons</span><span>132 – 136</span></div></div>`);
+  log("✓ week_packet.json sedia untuk Bot 2", "var(--ok)"); await sleep(1400); leave(0);
+}
+
+async function bot2(id) {
+  await enter(1);
+  log("Panggil claude -p (langganan, tiada API key) untuk teks bebas…");
+  for (const b of blocks) {
+    guard(id);
+    b.fields._terbeza = terbeza(b); b.fields._refleksi = refleksiDraft(b);
+    log(`Rancang ${who(b)}${b.holiday ? " (cuti → sebab diisi)" : " + terbeza + refleksi"}`);
+    view(blockCard(b, (b.fields._terbeza ? `<div class="new"><b>BARU · PEMBELAJARAN TERBEZA</b>${esc(b.fields._terbeza)}</div>` : "") +
+      `<div class="new"><b>BARU · CADANGAN REFLEKSI</b>${esc(b.fields._refleksi)}</div>`));
+    await sleep(b.holiday ? 700 : 420);
+  }
+  log(`✓ plan.json: ${blocks.length} RPH, terbeza ${blocks.filter(b => b.fields._terbeza).length}/${blocks.filter(b => !b.holiday).length}`, "var(--ok)");
+  await sleep(900); leave(1);
+}
+
+function sheetGrid(filled) {
+  const byDay = DAYS.map(d => blocks.filter(b => b.sheet === d));
+  const max = Math.max(...byDay.map(x => x.length));
+  let h = `<div class="grid">${DAYS.map(d => `<div class="h">${d}</div>`).join("")}`;
+  for (let r = 0; r < max; r++) h += byDay.map(col => { const b = col[r]; if (!b) return "<div></div>";
+    const on = filled.has(b); return `<div class="cell ${on ? (b.holiday ? "hol" : "on") : ""}">${isS(b) ? "SAINS" : "BI"}<br>${esc((F(b).kelas || F(b).class).replace(/^\d\s+/, ""))}</div>`; }).join("");
+  return h + "</div>";
+}
+async function bot3(id) {
+  await enter(2);
+  const fname = `M${W.week} 14-18 SEPTEMBER 2026`;
+  const filled = new Set();
+  for (const m of ["Drive: cari master eRPH (template bersih)…", `Drive files.copy → “${fname}”`, "Kosongkan semua medan fill/refleksi (sel KOMEN & disemak Penilai tidak disentuh)", "Baca senarai dropdown DATA / ENG DATA — nilai mesti tepat"]) { guard(id); log(m); await sleep(600); }
+  tiles.forEach(t => { t.material.color.setHex(TILE_OFF); t.material.emissive.setHex(0); });
+  let k = 0;
+  for (const d of DAYS) {
+    for (const b of blocks.filter(x => x.sheet === d)) {
+      guard(id); filled.add(b);
+      const t = tiles[DAYS.indexOf(d) + 5 * Math.min(3, blocks.filter(x => x.sheet === d).indexOf(b))];
+      t.material.color.setHex(b.holiday ? 0xffca28 : 0x4caf50); t.material.emissive.setHex(b.holiday ? 0x332800 : 0x0a2a0f);
+      k += isS(b) ? 16 : 18;
+      view(`<div class="card"><h3>📗 ${fname}</h3>${sheetGrid(filled)}</div><div class="card"><div class="kv"><span>Sel ditulis</span><span>${k}</span><span>Kaedah</span><span>Apps Script · values.batchUpdate</span><span>Logo / dropdown</span><span>Kekal ✓ (tiada eksport xlsx)</span></div></div>`);
+      log(`Isi ${d} · ${isS(b) ? "Sains" : "BI"} ${(F(b).kelas || F(b).class).replace(/\s+/g, " ")}`);
+      await sleep(330);
+    }
+  }
+  log(`✓ ${blocks.length} RPH diisi dalam “${fname}” → Bot 4`, "var(--ok)"); await sleep(900); leave(2);
+}
+
+async function bot4(id) {
+  await enter(3); lens.visible = true;
+  const fixes = [];
+  const checks = [
+    ["Nombor minggu sama dalam semua blok", blocks.every(b => +(F(b).minggu ?? F(b).week) === W.week)],
+    ["Tarikh dalam 14–18 Sep & padan dengan hari", blocks.every(b => { const d = F(b).tarikh || F(b).date; return d >= W.start && d <= W.end; })],
+    ["Tiada medan kosong (objektif / aktiviti)", blocks.every(b => b.holiday || (isS(b) ? F(b).objektif && F(b).aktiviti : F(b).learning_objective && F(b).activities))],
+    ["Kod LS bermula dengan kod CS (BI)", blocks.filter(b => !isS(b)).every(b => F(b).main_learning_standard.split(" ")[0].startsWith(F(b).main_content_standard.split(" ")[0]))],
+    ["SK / SP disalin tepat dari RPT", true],
+    ["Pembelajaran terbeza ada (bukan cuti)", blocks.every(b => b.holiday || b.fields._terbeza)],
+    ["Refleksi ada untuk setiap RPH", blocks.every(b => b.fields._refleksi)],
+    ["Bahasa: Sains = BM, BI = English", true],
+  ];
+  view(`<div class="card"><h3>🔍 Semakan (validate.py + AI review)</h3><div id="chks"></div></div><div class="card"><h3>✏️ Penambahbaikan</h3><div id="fx" style="font-size:12.5px;color:var(--mute)">—</div></div>`);
+  for (const [t, ok] of checks) {
+    guard(id); $("#chks").insertAdjacentHTML("beforeend", `<div class="chk"><i>${ok ? "✅" : "❌"}</i>${t}</div>`);
+    log(`${ok ? "✓" : "✗"} ${t}`, ok ? null : "var(--b5)"); await sleep(420);
+  }
+  // a real defect in the generated week-32 text: "texts. with teacher support."
+  for (const b of blocks) for (const k of ["learning_objective", "objektif"]) {
+    const v = F(b)[k]; if (v && /\.\s*\n?\s*with teacher support/.test(v)) {
+      F(b)[k] = v.replace(/\.\s*\n?\s*with teacher support/g, " with teacher support"); fixes.push(`${who(b)}: “…texts. with teacher support” → “…texts with teacher support”`); }
+  }
+  guard(id); await sleep(500);
+  fixes.push("Nota: master ISNIN dropdown MASA ($J$3:$J$13) tiada 17:30 — kecacatan template, bukan RPH");
+  $("#fx").innerHTML = fixes.map(f => `<div class="chk"><i>🛠️</i>${esc(f)}</div>`).join("");
+  fixes.forEach(f => log("Baiki: " + f, "var(--b2)"));
+  await sleep(900); lens.visible = false;
+  log("Hantar notifikasi Telegram kepada Cikgu…", "var(--tg)");
+  plane.visible = true; planeAnim = {k:0};
+  await sleep(1200); guard(id);
+  const nonHol = blocks.filter(b => !b.holiday).length;
+  await new Promise((resolve) => {
+    tg(`📋 RPH Minggu ${W.week} (14–18 Sep 2026) sedia untuk semakan akhir.\n\n• ${blocks.length} RPH (Sains ${blocks.filter(isS).length}, BI ${blocks.filter(b => !isS(b)).length})\n• Cuti: Rabu 16.09 (sebab diisi)\n• Semakan: 8/8 lulus, ${fixes.length - 1} pembaikan\n• Terbeza: ${nonHol}/${nonHol} ✓\n\nSesi berjalan seperti dirancang?`, [
+      {t:"✅ Lulus — semua tercapai", wide:true, f:kb => { kb.remove(); tg("✅ Lulus — semua tercapai", null, true); resolve(); }},
+      {t:"✏️ Ubah kelas", f:() => tg("✏️ Pilih kelas yang berbeza (dalam app sebenar: senarai sesi dengan butang tercapai / separuh / ditangguhkan).")},
+      {t:"⏸ Tahan", f:() => tg("⏸ Ditahan. Tiada apa dihantar. (Dalam simulasi, tekan ✅ Lulus untuk teruskan.)")},
+    ]);
+    $("#botHead p").innerHTML = "⏳ <b>Menunggu kelulusan anda</b> — tekan <b>✅ Lulus</b> pada telefon di kiri bawah.";
+    log("⏳ Menunggu kelulusan Cikgu di Telegram…", "var(--warn)");
+  });
+  guard(id);
+  log("✓ Diluluskan oleh Cikgu — refleksi dimuktamadkan", "var(--ok)");
+  await sleep(700); leave(3);
+}
+
+function classroom(state) {
+  return `<div class="cr"><span class="st ${state.turned ? "ok" : ""}">${state.turned ? "Turned in" : "Assigned"}</span>
+    <div class="ttl">MINGGU ${W.week} (14 - 18 SEPTEMBER 2026)</div>
+    <div style="color:#5f6368">Penilai · 100 points · Due Sunday 11:59 PM</div>
+    <div style="margin-top:6px">Sila hantar e-RPH Minggu ${W.week} sebelum atau pada 20 September 2026.</div>
+    <div style="margin-top:10px;font-weight:600">Your work</div>
+    ${state.att ? `<div class="att"><i></i><div><b>M${W.week} 14-18 SEPTEMBER 2026</b><br><span style="color:#5f6368">Google Sheets</span></div></div>` : `<div class="btn" style="background:#fff;color:#1a73e8;border:1px solid #dadce0">+ Add or create</div>`}
+    ${state.turned ? `<div class="btn" style="background:#fff;color:#1a73e8;border:1px solid #dadce0">Unsubmit</div>` : `<div class="btn">Hand in</div>`}
+    ${state.comment ? `<div class="cm"><b>HARSIDI JUNICK</b> · now<br>Submitted. Thank you.</div>` : ""}</div>`;
+}
+async function bot5(id) {
+  await enter(4);
+  const st = {};
+  const steps = [
+    ["Chrome (profil tersimpan, tiada kata laluan) → classroom.google.com", null],
+    ["Classwork → cari /MINGGU\\s+32\\b/ → ditemui", null],
+    ["Semak idempotensi: belum Turned in → teruskan", null],
+    ["Add or create → Google Drive → cari “M32 14-18 SEPTEMBER 2026”", null],
+    ["Lampiran dipaparkan ✓", () => st.att = 1],
+    ["Hand in → confirm", null],
+    ["Status “Turned in” disahkan ✓", () => st.turned = 1],
+    ["Class comment: “Submitted. Thank you.” → disahkan ✓", () => st.comment = 1],
+  ];
+  view(classroom(st));
+  for (const [m, f] of steps) {
+    guard(id); if (f) f(); log(m, f ? "var(--ok)" : null); view(classroom(st)); await sleep(900);
+  }
+  gateGreen = true; log("LAUNCH GATE: all green. Catapult go!", "var(--ok)"); packetGoal = 14.2; await sleep(1200);
+  burst(13.8, 1.8, 2.6, 0x1e8e3e); burst(13.8, 2.4, 2.6, 0x4caf50);
+  plane.visible = true; planeAnim = {k:0};
+  tg(`✅ RPH Minggu ${W.week} berjaya dihantar!\n\n📎 M${W.week} 14-18 SEPTEMBER 2026\n📌 Status: Turned in\n💬 Komen: “Submitted. Thank you.”\n🕙 Jumaat, 10:00 PM\n\n(Tangkapan skrin dilampirkan dalam app sebenar)`);
+  log("✓ Notifikasi kejayaan dihantar ke Telegram", "var(--ok)");
+  await sleep(600); leave(4);
+  $("#mission").classList.add("show");
+  $("#botHead").innerHTML = `<h2 style="color:var(--ok)">✅ MISSION COMPLETE · Selesai</h2><p>RPH Minggu ${W.week} dirancang, diisi, disemak, diluluskan dan dihantar. Seret skrin 3D untuk melihat dari sudut lain.</p>`;
+}
+
+async function run() {
+  const id = ++runId; running = true; $("#play").disabled = true;
+  try { await bot1(id); await bot2(id); await bot3(id); await bot4(id); await bot5(id); }
+  catch (e) { if (e !== "reset") { console.error(e); log("Ralat: " + e, "var(--b5)"); } }
+  if (id === runId) { running = false; $("#play").disabled = false; $("#play").textContent = "▶ RELAUNCH"; }
+}
+function reset() {
+  runId++; running = false;
+  blocks.splice(0, blocks.length, ...JSON.parse(ORIG)); // Bot 4 edits text; start each run clean
+  stations.forEach(s => { s.active = false; s.done = false; });
+  tiles.forEach(t => { t.material.color.setHex(TILE_OFF); t.material.emissive.setHex(0); });
+  packet.position.x = -13; packetGoal = null; lens.visible = false; userOrbit = false; gateGreen = false;
+  $("#mission").classList.remove("show");
+  camGoal.x = -3; camGoal.look.set(-3, 2.2, 0);
+  $("#log").innerHTML = ""; $("#chat").innerHTML = ""; view("");
+  $("#botHead").innerHTML = `<h2 style="color:var(--amber)">STANDBY · Sedia</h2><p>Tekan ▶ LAUNCH untuk melihat 5 unit mobile suit bekerja dari RPT hingga hantar di Google Classroom.</p>`;
+  $("#play").disabled = false; $("#play").textContent = "▶ LAUNCH"; pills();
+  tg("🛰️ RPH Squadron online. 5 unit RX dalam hangar. Saya akan lapor kepada Cikgu bila RPH minggu ini sedia untuk diluluskan.");
+}
+$("#play").onclick = () => { if (stations.some(s => s.done)) reset(); run(); };
+$("#reset").onclick = reset;
+window.__sim = {run, reset, blocks};
+resize(); reset(); tick();
+</script>
+</body>
+</html>
